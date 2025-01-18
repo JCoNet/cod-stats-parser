@@ -78,7 +78,7 @@ For general discussions, feedback, or questions, feel free to:
 
 ## 6. Licensing and Usage
 
-- **License**: This project is provided under the MIT license. Please review the [LICENSE](../../LICENSE) file for full details on usage, reproduction, and distribution.
+- **License**: This project is provided under the MIT license. Please review the [LICENSE](?tab=MIT-1-ov-file) file for full details on usage, reproduction, and distribution.
 - **Attribution**: If you use or adapt this project, we encourage you to link back to this repository so others can find the source.
 
 ## 7. Disclaimer
