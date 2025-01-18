@@ -17,7 +17,7 @@ We adhere to a few core principles to keep our community respectful and inclusiv
 - **Inclusivity**: Embrace diversity in skill levels, backgrounds, and perspectives. Discrimination or harassment is not tolerated.
 - **No Harassment**: Examples of unacceptable behavior include, but are not limited to, offensive comments or personal attacks, threats of violence, and unwelcome sexual attention.
 
-If you experience or witness any behavior that violates these principles, please [open an issue](/issues) or contact the repository maintainers directly.
+If you experience or witness any behavior that violates these principles, please [open an issue](../../issues) or contact the repository maintainers directly.
 
 ## 3. Contribution Guidelines
 
@@ -72,13 +72,13 @@ We appreciate your help in making our project better. If you encounter a bug or 
 
 For general discussions, feedback, or questions, feel free to:
 
-- **Open a Discussion**: Use the [Discussions](/discussions) tab (if enabled) or open an issue labeled “Question/Discussion.”
+- **Open a Discussion**: Use the [Discussions](../../discussions) tab (if enabled) or open an issue labeled “Question/Discussion.”
 - **Pull Request Comments**: Use the comments section within a pull request to clarify any part of the code or proposed changes.
 - **Direct Contact**: If you need to reach out privately, you can email the repository maintainers (contact info can be found in the repo or company website).
 
 ## 6. Licensing and Usage
 
-- **License**: This project is provided under the MIT license. Please review the [LICENSE](/LICENSE) file for full details on usage, reproduction, and distribution.
+- **License**: This project is provided under the MIT license. Please review the [LICENSE](../../LICENSE) file for full details on usage, reproduction, and distribution.
 - **Attribution**: If you use or adapt this project, we encourage you to link back to this repository so others can find the source.
 
 ## 7. Disclaimer
