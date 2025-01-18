@@ -18,5 +18,8 @@
 			"pattern": "api.cod-stats.jconet.ltd",
 			"custom_domain": true
 		}
-	]
+	],
+	"placement": {
+		"mode": "smart"
+	}
 }
