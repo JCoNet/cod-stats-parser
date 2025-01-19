@@ -2,4 +2,5 @@
 
 interface Env {
 	MY_BUCKET: R2Bucket;
+	API_KEY: string;
 }
