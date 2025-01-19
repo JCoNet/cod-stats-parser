@@ -28,6 +28,11 @@ export default {
 	 * console.log(await response.text()); // Logs the JSON string or an error message
 	 */
 	async fetch(request: Request, env: Env): Promise<Response> {
+		const apiKey = request.headers.get('x-api-key');
+		if (!apiKey || apiKey !== env.API_KEY) {
+			return new Response('Unauthorized: Invalid or missing Api Key (x-api-key)', { status: 401 });
+		}
+
 		const url = new URL(request.url);
 		const fileUrl = url.searchParams.get('file');
 		const userId = url.searchParams.get('userId');

@@ -15,13 +15,10 @@
 	],
 	"routes": [
 		{
-			"pattern": "api.cod-stats.jconet.ltd",
+			"pattern": "cod-stats-parser.jconet.ltd",
 			"custom_domain": true
 		}
 	],
-	"placement": {
-		"mode": "smart"
-	},
 	"workers_dev": false,
 	"preview_urls": false
 }
