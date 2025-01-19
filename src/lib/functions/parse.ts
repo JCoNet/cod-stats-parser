@@ -1,5 +1,6 @@
 import { DomUtils, parseDocument } from 'htmlparser2';
 import { H1_WHITELIST, H2_WHITELIST } from '../constants/whitelist';
+import { H1_KEY_MAPPING, H2_KEY_MAPPING, KeyMapping } from '../constants/mapping';
 
 export interface ParsedData {
 	[h1Heading: string]: {
@@ -67,8 +68,14 @@ export function parseHtmlH1H2Tables(html: string): ParsedData {
 			continue; // Skip if this H1 is not in the whitelist
 		}
 
+		// Create the minified and easy to use in other apps key for JSON object
+		const h1Key = getSimplifiedKey(h1Text, H1_KEY_MAPPING);
+		if (!h1Key) {
+			continue;
+		}
+
 		// Create an object to hold all H2 data for this H1
-		parsed[h1Text] = {};
+		parsed[h1Key] = {};
 
 		// Identify the *next* <h1> to know where our "section" ends
 		const nextH1Node = h1Elements[i + 1] ?? null;
@@ -86,6 +93,12 @@ export function parseHtmlH1H2Tables(html: string): ParsedData {
 					continue; // Skip if H2 isn't whitelisted
 				}
 
+				// Create the minified and easy to use in other apps key for JSON object
+				const h2Key = getSimplifiedKey(h2Text, H2_KEY_MAPPING);
+				if (!h2Key) {
+					continue;
+				}
+
 				// Parse the *first* table that appears after this H2
 				const tableNode = findNextTableSibling(sibling);
 				if (tableNode) {
@@ -93,7 +106,7 @@ export function parseHtmlH1H2Tables(html: string): ParsedData {
 					const tableData = parseSingleTable(tableNode);
 
 					// Assign it to parsed[h1][h2]
-					parsed[h1Text][h2Text] = tableData;
+					parsed[h1Key][h2Key] = tableData;
 				}
 			}
 
@@ -215,4 +228,47 @@ function findNextTableSibling(h2Node: any) {
 		next = next.nextSibling;
 	}
 	return null;
+}
+
+/**
+ * Searches for a simplified key corresponding to a provided input string from a predefined mapping.
+ *
+ * - Looks up the provided string in a predefined mapping of whitelisted values.
+ * - If a match is found, returns the simplified key (e.g., "Call of Duty: Black Ops 6" -> "BO6").
+ * - Returns `null` if no matching entry is found in the mapping.
+ *
+ * This function ensures only valid, whitelisted strings are processed and converted into their simplified key representations.
+ *
+ * @function getSimplifiedKey
+ * @param {string} input - The string to search for in the predefined mapping.
+ * @param {KeyMapping} mapping - A collection of mappings where keys are whitelisted strings, and values are their simplified keys.
+ * @returns {string | null} The simplified key corresponding to the input string, or `null` if no match is found.
+ *
+ * @example
+ * // Example mapping
+ * const H1_MAPPING = {
+ *   'Call of Duty: Black Ops 6': 'BO6',
+ *   'Call of Duty: Modern Warfare II': 'MW2',
+ *   'Call of Duty: Warzone 2.0': 'WZ2'
+ * };
+ *
+ * const result = getSimplifiedKey('Call of Duty: Black Ops 6', H1_MAPPING);
+ * console.log(result); // Output: 'BO6'
+ *
+ * const missingResult = getSimplifiedKey('Unknown Game', H1_MAPPING);
+ * console.log(missingResult); // Output: null
+ *
+ * @throws {TypeError} Throws if `input` is not a string or `mapping` is not a valid object.
+ */
+function getSimplifiedKey(input: string, mapping: KeyMapping): string | null {
+	// Validate inputs
+	if (typeof input !== 'string') {
+		throw new TypeError('Input must be a string.');
+	}
+	if (typeof mapping !== 'object' || mapping === null) {
+		throw new TypeError('Mapping must be a valid object.');
+	}
+
+	// Lookup the input string in the mapping
+	return mapping[input] || null;
 }
