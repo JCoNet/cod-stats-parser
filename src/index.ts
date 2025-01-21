@@ -1,70 +1,105 @@
+import express from 'express';
+import https from 'https';
+import fs from 'fs';
+import dotenv from 'dotenv';
 import { parseHtmlH1H2Tables } from './lib/functions/parse';
 import { uploadParsedFile } from './lib/functions/upload';
 
-export default {
-	/**
-	 * A Cloudflare Worker handler that processes an incoming Request to fetch and parse HTML content, then uploads the parsed data.
-	 *
-	 * 1. Retrieves the `file` and `userId` query parameters from the request URL.
-	 * 2. Ensures both parameters exist; returns an error Response if either is missing.
-	 * 3. Fetches the HTML content from the `fileUrl`, throwing an error if the request fails.
-	 * 4. Parses the HTML content into a JSON structure using `parseHtmlH1H2Tables`.
-	 * 5. Uploads the parsed JSON using `uploadParsedFile` and returns the result as a JSON response.
-	 *
-	 * @async
-	 * @function fetch
-	 * @param {Request} request - The incoming HTTP request to the Cloudflare Worker.
-	 * @param {Env} env - The environment bindings (e.g., KV namespaces, secrets) for the Worker.
-	 * @returns {Promise<Response>} A Promise that resolves to a Response object:
-	 *  - 200 on success with JSON payload of the uploaded result.
-	 *  - 400 if `file` or `userId` query parameters are missing.
-	 *  - 500 if an error occurs while fetching or processing the HTML content.
-	 * @throws {Error} Throws an error if fetching the specified HTML file fails (non-2xx status).
-	 *
-	 * @example
-	 * // Example usage (inside a Worker test or event handler):
-	 * const request = new Request('https://example.com?file=https://somesite.com/myFile.html&userId=abc123');
-	 * const response = await fetch(request, env);
-	 * console.log(await response.text()); // Logs the JSON string or an error message
-	 */
-	async fetch(request: Request, env: Env): Promise<Response> {
-		const apiKey = request.headers.get('x-api-key');
-		if (!apiKey || apiKey !== env.API_KEY) {
-			return new Response('Unauthorized: Invalid or missing Api Key (x-api-key)', { status: 401 });
+// Load environment variables
+dotenv.config();
+
+/**
+ * Environment variables interface.
+ */
+export interface Env {
+	API_KEY: string;
+	PORT?: string | number;
+	R2_BUCKET_NAME: string;
+	R2_ACCESS_KEY_ID: string;
+	R2_SECRET_ACCESS_KEY: string;
+	R2_ENDPOINT: string;
+}
+
+const env: Env = {
+	API_KEY: process.env.API_KEY || '',
+	PORT: process.env.PORT || 3000,
+	R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || '',
+	R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY || '',
+	R2_BUCKET_NAME: process.env.R2_BUCKET_NAME || '',
+	R2_ENDPOINT: process.env.R2_ENDPOINT || '',
+};
+
+// Initialize Express app
+const app = express();
+const PORT = env.PORT;
+
+/**
+ * Express route handler for parsing and uploading HTML content.
+ *
+ * 1. Retrieves the `file` and `userId` query parameters from the request URL.
+ * 2. Ensures both parameters exist; returns an error response if either is missing.
+ * 3. Fetches the HTML content from the `fileUrl`, throwing an error if the request fails.
+ * 4. Parses the HTML content into a JSON structure using `parseHtmlH1H2Tables`.
+ * 5. Uploads the parsed JSON using `uploadParsedFile` and returns the result as a JSON response.
+ *
+ * @async
+ * @function
+ * @param {express.Request} req - The incoming HTTP request.
+ * @param {express.Response} res - The HTTP response object.
+ * @returns {Promise<void>} A Promise that resolves to no value but sends an HTTP response:
+ *  - 200 on success with a JSON payload of the uploaded result.
+ *  - 400 if `file` or `userId` query parameters are missing.
+ *  - 500 if an error occurs while fetching or processing the HTML content.
+ */
+app.get('/parse-and-upload', async (req: express.Request, res: express.Response): Promise<void> => {
+	const apiKey: string | undefined = req.headers['x-api-key'] as string;
+	if (!apiKey || apiKey !== env.API_KEY) {
+		res.status(401).send('Unauthorized: Invalid or missing Api Key (x-api-key)');
+		return;
+	}
+
+	const fileUrl: string | undefined = req.query.file as string;
+	const userId: string | undefined = req.query.userId as string;
+
+	if (!fileUrl) {
+		res.status(400).send('Missing file parameter');
+		return;
+	}
+
+	if (!userId) {
+		res.status(400).send('Missing userId parameter');
+		return;
+	}
+
+	try {
+		// Fetch the HTML file from the provided URL
+		const response = await fetch(fileUrl);
+		if (!response.ok) {
+			throw new Error(`Failed to fetch file: ${response.statusText}`);
 		}
 
-		const url = new URL(request.url);
-		const fileUrl = url.searchParams.get('file');
-		const userId = url.searchParams.get('userId');
+		const htmlContent: string = await response.text();
 
-		if (!fileUrl) {
-			return new Response('Missing file parameter', { status: 400 });
-		}
+		// Parse the HTML into JSON
+		const jsonResult = parseHtmlH1H2Tables(htmlContent);
 
-		if (!userId) {
-			return new Response('Missing userId parameter', { status: 400 });
-		}
+		const { body } = await uploadParsedFile({ jsonResult, userId, env });
 
-		try {
-			// Fetch the HTML file from the provided URL
-			const response = await fetch(fileUrl);
-			if (!response.ok) {
-				throw new Error(`Failed to fetch file: ${response.statusText}`);
-			}
+		res.status(200).json(JSON.parse(body));
+	} catch (error: unknown) {
+		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+		console.error('Error:', errorMessage);
+		res.status(500).send(`Error: ${errorMessage}`);
+	}
+});
 
-			const htmlContent = await response.text();
+// HTTPS server options
+const options: https.ServerOptions = {
+	key: fs.readFileSync('./key.pem'),
+	cert: fs.readFileSync('./cert.pem'),
+};
 
-			// Parse the HTML into JSON
-			const jsonResult = parseHtmlH1H2Tables(htmlContent);
-
-			const { body } = await uploadParsedFile({ jsonResult, userId, env });
-
-			return new Response(body, {
-				status: 200,
-				headers: { 'Content-Type': 'application/json' },
-			});
-		} catch (error: any) {
-			return new Response(`Error: ${error.message}`, { status: 500 });
-		}
-	},
-} satisfies ExportedHandler<Env>;
+// Create and start HTTPS server
+https.createServer(options, app).listen(PORT, () => {
+	console.log(`HTTPS server running on https://localhost:${PORT}`);
+});
