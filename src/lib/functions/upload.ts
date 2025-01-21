@@ -1,6 +1,6 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { ParsedData } from './parse';
-import { Env } from '../../index2';
+import { Env } from '../..';
 
 /**
  * Uploads parsed data to an R2 bucket using the S3 API, generating a unique object key based on the current timestamp and the user's ID.
