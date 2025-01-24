@@ -1,6 +1,6 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { ParsedData } from './parse';
-import { Env } from '../..';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { ParsedData } from "./parse";
+import { Env } from "../..";
 
 /**
  * Uploads parsed data to an R2 bucket using the S3 API, generating a unique object key based on the current timestamp and the user's ID.
@@ -43,15 +43,18 @@ export const uploadParsedFile = async ({
 	jsonResult: ParsedData;
 	userId: string;
 	env: Env;
-}): Promise<{ body: string }> => {
+}): Promise<{ body: { url: string } }> => {
 	// Create S3 client for R2
 	const s3 = new S3Client({
-		region: 'auto', // R2 uses 'auto' as the region
+		region: "auto", // R2 uses 'auto' as the region
 		endpoint: env.R2_ENDPOINT, // R2-specific endpoint
 		credentials: {
 			accessKeyId: env.R2_ACCESS_KEY_ID,
 			secretAccessKey: env.R2_SECRET_ACCESS_KEY,
 		},
+		forcePathStyle: true,
+		defaultsMode: "standard",
+		requestChecksumCalculation: "WHEN_REQUIRED",
 	});
 
 	// Convert the JSON object to a string
@@ -66,18 +69,20 @@ export const uploadParsedFile = async ({
 			Bucket: env.R2_BUCKET_NAME,
 			Key: objectKey,
 			Body: jsonString,
-			ContentType: 'application/json',
+			ContentType: "application/json",
 		});
 
 		await s3.send(command);
 
 		// Return the public URL for the uploaded file
-		const body = JSON.stringify({
+		const body = {
 			url: `https://cdn.cod-stats.jconet.ltd/${objectKey}`,
-		});
+		};
 
 		return { body };
 	} catch (error) {
-		throw new Error(`Failed to upload file to R2: ${(error as Error).message}`);
+		throw new Error(
+			`Failed to upload file to R2: ${(error as Error).message}`
+		);
 	}
 };
