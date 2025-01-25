@@ -61,7 +61,7 @@ export const uploadParsedFile = async ({
 	const jsonString = JSON.stringify(jsonResult, null, 2);
 
 	// Generate a unique object key
-	const objectKey = `${Date.now()}-${userId}-data`;
+	const objectKey = `${Date.now()}_${userId}_data`;
 
 	try {
 		// Upload the object to R2 using the S3 API
